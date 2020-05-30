@@ -148,4 +148,5 @@ $noteTitle.on("keyup", handleRenderSaveBtn);
 $noteText.on("keyup", handleRenderSaveBtn);
 
 // Gets and renders the initial list of notes
+console.log("Invoked index.js");
 getAndRenderNotes();

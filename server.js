@@ -6,7 +6,7 @@ const fs = require("fs");
 // Create Express Server
 const server = express();
 const PORT = process.env.PORT || 8050;
-const dbFile = path.join(__dirname, "../db/db.json");
+const dbFile = path.join(__dirname, "db/db.json");
 
 // Sets up the Express app to handle data parsing
 server.use(express.urlencoded({ extended: true }));
@@ -17,36 +17,30 @@ server.listen(PORT, function() {
     console.log("Server listening on PORT: " + PORT);
 });
 
-
-//HTML Routes
-server.get("/notes", function(request, response) {
-    response.sendFile(path.join(__dirname, "notes.html"));
-});
-
-server.get("*", function(request, response) {
-    response.sendFile(path.join(__dirname, "index.html"));
-});
-
-
-// API Routes
-server.get("api/notes", function(request, response){
-    fs.readFile(dbFile, function(err, data) {
+// API Route
+server.get("/api/notes", function(request, response){
+    console.log("Get api/notes", request.url);
+    fs.readFile(dbFile, function(err, rawData) {
         if (err) {
+            console.log("throwing err");
+            console.log(err);
             throw err;
-        } else {
-            response.json(data);
-        }
+        } 
+        response.json(JSON.parse(rawData));
     });
-});
-  
-server.post("api/notes", function(request, response){
+}); 
+
+// POST route
+server.post("/api/notes", function(request, response){
+    console.log("POST request");
     let inpNote = request.body;
     let newNote = {};
     let maxId = 0;
-    fs.readFile(dbFile, function(err, dbNotes) {
+    fs.readFile(dbFile, function(err, rawData) {
         if (err) {
             throw err;
         } 
+        let dbNotes = JSON.parse(rawData);
         if (dbNotes.length > 0) {
             for (i=0; i < dbNotes.length; i++) {
                 if (i === 0) {
@@ -64,15 +58,18 @@ server.post("api/notes", function(request, response){
                 text: inpNote.text
             }
 
-        } else {
+        } 
+        else {
             newNote = {
                 id: 1,
                 title: inpNote.title,
                 text: inpNote.text
             }
-        }
+        };
+        
         dbNotes.push(newNote);
-        fs.writeFile(dbFile, dbNotes, function (err) {
+        stringNotes = JSON.stringify(dbNotes);
+        fs.writeFile(dbFile, stringNotes, function (err) {
             if (err) {
                 console.log("Error writing new note: ", err);
                 response.end(err);
@@ -82,15 +79,18 @@ server.post("api/notes", function(request, response){
     });
 });
 
-server.delete("api/note/:id", function(request, response) {
+// DELETE route
+server.delete("/api/notes/:id", function(request, response) {
+    console.log("DELETE request");
     let delNoteId = request.params.id;
     let delNoteFound = false;
 
-    fs.readFile(dbFile, function(err, dbNotes) {
+    fs.readFile(dbFile, function(err, rawData) {
         if (err) {
             throw err;
         } 
-        for (j=0; i < dbNotes.length; j++) {
+        dbNotes = JSON.parse(rawData);
+        for (j=0; j < dbNotes.length; j++) {
             if (dbNotes[j].id == delNoteId) {
                 dbNotes.splice(j, 1);
                 console.log("Note with id ", delNoteId, " is deleted");
@@ -98,7 +98,8 @@ server.delete("api/note/:id", function(request, response) {
             }
         };
         if (delNoteFound) {
-            fs.writeFile(dbFile, dbNotes, function (err) {
+            stringNotes = JSON.stringify(dbNotes);
+            fs.writeFile(dbFile, stringNotes, function (err) {
                 if (err) {
                     console.log("Error updating db after delete, err: ", err);
                     response.end(err);
@@ -107,4 +108,28 @@ server.delete("api/note/:id", function(request, response) {
             });
         };
     });
-})
+});
+
+//HTML Routes
+server.get("/notes", function(request, response) {
+    console.log("Get notes", request.url);
+    response.sendFile(path.join(__dirname, "notes.html"));
+});
+
+// This route is to handle favicon.ico 
+server.get("/favicon.ico", function(request, response) {
+    response.status(204).end();
+});
+
+server.get("/assets/js/index.js", function(request, response) {
+    response.sendFile(path.join(__dirname, "assets/js/index.js"));
+});
+
+server.get("/assets/css/styles.css", function(request, response) {
+    response.sendFile(path.join(__dirname, "assets/css/styles.css"));
+});
+
+// Keep this route at the end as it has url "*"
+server.get("*", function(request, response) {
+    response.sendFile(path.join(__dirname, "index.html"));
+});
