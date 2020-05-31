@@ -12,54 +12,63 @@ const dbFile = path.join(__dirname, "db/db.json");
 server.use(express.urlencoded({ extended: true }));
 server.use(express.json());
 
+// Sets up express to server static css/js/images
+server.use(express.static("public"));
+
 // Server starts listening to the PORT for incoming requests
 server.listen(PORT, function() {
     console.log("Server listening on PORT: " + PORT);
+    console.log("Server URL: http://localhost:" + PORT);
 });
 
 // API Route
 server.get("/api/notes", function(request, response){
-    console.log("Get api/notes", request.url);
-    fs.readFile(dbFile, function(err, rawData) {
-        if (err) {
-            console.log("throwing err");
-            console.log(err);
-            throw err;
-        } 
-        response.json(JSON.parse(rawData));
+    fs.readFile(dbFile, "utf8", function(err, rawData) {
+        if (err) throw err;
+        if (rawData) {
+            response.json(JSON.parse(rawData));
+        } else {
+            response.end();
+        }
     });
 }); 
 
 // POST route
 server.post("/api/notes", function(request, response){
-    console.log("POST request");
     let inpNote = request.body;
     let newNote = {};
+    let dbNotes = [];
     let maxId = 0;
-    fs.readFile(dbFile, function(err, rawData) {
-        if (err) {
-            throw err;
-        } 
-        let dbNotes = JSON.parse(rawData);
-        if (dbNotes.length > 0) {
-            for (i=0; i < dbNotes.length; i++) {
-                if (i === 0) {
-                    maxId = parseInt(dbNotes[i].id);
-                } 
-                else {
-                    if (maxId < parseInt(dbNotes[i].id)) {
+    fs.readFile(dbFile, "utf8", function(err, rawData) {
+        if (err) throw err;
+        if (rawData) {
+            dbNotes = JSON.parse(rawData);
+            if (dbNotes.length > 0) {
+                for (i=0; i < dbNotes.length; i++) {
+                    if (i === 0) {
                         maxId = parseInt(dbNotes[i].id);
+                    } 
+                    else {
+                        if (maxId < parseInt(dbNotes[i].id)) {
+                            maxId = parseInt(dbNotes[i].id);
+                        }
                     }
                 }
-            }
-            newNote = {
-                id: maxId + 1,
-                title: inpNote.title,
-                text: inpNote.text
-            }
+                newNote = {
+                    id: maxId + 1,
+                    title: inpNote.title,
+                    text: inpNote.text
+                }
 
-        } 
-        else {
+            } 
+            else {
+                newNote = {
+                    id: 1,
+                    title: inpNote.title,
+                    text: inpNote.text
+                }
+            }
+        } else {
             newNote = {
                 id: 1,
                 title: inpNote.title,
@@ -81,20 +90,20 @@ server.post("/api/notes", function(request, response){
 
 // DELETE route
 server.delete("/api/notes/:id", function(request, response) {
-    console.log("DELETE request");
     let delNoteId = request.params.id;
     let delNoteFound = false;
+    let dbNotes = [];
 
-    fs.readFile(dbFile, function(err, rawData) {
-        if (err) {
-            throw err;
-        } 
-        dbNotes = JSON.parse(rawData);
-        for (j=0; j < dbNotes.length; j++) {
-            if (dbNotes[j].id == delNoteId) {
-                dbNotes.splice(j, 1);
-                console.log("Note with id ", delNoteId, " is deleted");
-                delNoteFound = true;
+    fs.readFile(dbFile, "utf8", function(err, rawData) {
+        if (err) throw err;
+        if (rawData) {
+            dbNotes = JSON.parse(rawData);
+            for (j=0; j < dbNotes.length; j++) {
+                if (dbNotes[j].id == delNoteId) {
+                    dbNotes.splice(j, 1);
+                    console.log("Note with id= ", delNoteId, " is deleted");
+                    delNoteFound = true;
+                }
             }
         };
         if (delNoteFound) {
@@ -110,23 +119,14 @@ server.delete("/api/notes/:id", function(request, response) {
     });
 });
 
-//HTML Routes
-server.get("/notes", function(request, response) {
-    console.log("Get notes", request.url);
-    response.sendFile(path.join(__dirname, "notes.html"));
-});
-
 // This route is to handle favicon.ico 
 server.get("/favicon.ico", function(request, response) {
     response.status(204).end();
 });
 
-server.get("/assets/js/index.js", function(request, response) {
-    response.sendFile(path.join(__dirname, "assets/js/index.js"));
-});
-
-server.get("/assets/css/styles.css", function(request, response) {
-    response.sendFile(path.join(__dirname, "assets/css/styles.css"));
+//HTML Routes
+server.get("/notes", function(request, response) {
+    response.sendFile(path.join(__dirname, "notes.html"));
 });
 
 // Keep this route at the end as it has url "*"
