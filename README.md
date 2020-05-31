@@ -4,7 +4,8 @@
 
 ## Descripton
 ```
-This application can be used to write, save, and delete notes. This application will use an express backend and save and retrieve note data from a JSON file.
+This application can be used to write, save, and delete notes. This application will use an 
+express backend and save and retrieve note data from a JSON file.
 ```
 
 ## Table of Contents
@@ -17,7 +18,7 @@ This application can be used to write, save, and delete notes. This application 
 Follow Below steps to start using the application:
 1) Start the server using 'Node server.js' command. 
 2) Click on the server URL to launch the application or type the URL in your browser
-3 On Home Page, click on button 'Get Started' to view/delete your previous notes or add new notes. 
+3) On Home Page, click on button 'Get Started' to view/delete your previous notes or add new notes. 
 ```
 
 ## Contributing
